@@ -9,6 +9,8 @@ struct Menu {
     string nama;
     int harga;
     string kategori;
+    Menu* left;
+    Menu* right;
 };
 
 struct Order {
@@ -16,6 +18,8 @@ struct Order {
     string namaPemesan;
     int status; 
 };
+
+Menu* rootMenu = NULL;
 
 void clearScreen() {
     #ifdef _WIN32
@@ -40,22 +44,132 @@ void printHeader(string title) {
     cout << "+--------------------------------------------------------+\n";
 }
 
+Menu* createMenuNode(int id, string nama, int harga, string kategori) {
+    Menu* newNode = new Menu();
+    newNode->id = id;
+    newNode->nama = nama;
+    newNode->harga = harga;
+    newNode->kategori = kategori;
+    newNode->left = NULL;
+    newNode->right = NULL;
+    return newNode;
+}
+
+Menu* insertMenu(Menu* root, int id, string nama, int harga, string kategori) {
+    if (root == NULL) {
+        return createMenuNode(id, nama, harga, kategori);
+    }
+    // Jika ID lebih kecil, masuk ke kiri. Jika lebih besar, ke kanan.
+    if (id < root->id) {
+        root->left = insertMenu(root->left, id, nama, harga, kategori);
+    } else if (id > root->id) {
+        root->right = insertMenu(root->right, id, nama, harga, kategori);
+    } else {
+        cout << "Gagal: Menu dengan ID " << id << " sudah ada!\n";
+    }
+    return root;
+}
+
+void tampilKatalogInOrder(Menu* root) {
+    if (root != NULL) {
+        tampilKatalogInOrder(root->left);
+        cout << "| " << root->id << "\t| Rp" << root->harga << "\t| " << root->kategori << "\t| " << root->nama << endl;
+        tampilKatalogInOrder(root->right);
+    }
+}
+
+Menu* searchMenu(Menu* root, int id) {
+    if (root == NULL || root->id == id) {
+        return root;
+    }
+    if (root->id < id) {
+        return searchMenu(root->right, id);
+    }
+    return searchMenu(root->left, id);
+}
+
 void layarPemesan() {
-    printHeader("Dashboard Pemesan");
-    cout << "1. Lihat Katalog Menu (Tree - Kungs)\n";
-    cout << "2. Kelola Keranjang & Checkout (DLL & Stack - Akbats)\n";
-    cout << "3. Lacak Pesanan Selesai (SLL - Danis Pixel World)\n";
-    cout << "0. Kembali ke Login\n";
-    cout << "Pilih: ";
+    int pilihan;
+    while (true) {
+        printHeader("Dashboard Pemesan");
+        cout << "1. Lihat Katalog Menu (Tree - Kungs)\n";
+        cout << "2. Cari Menu berdasarkan ID (Tree)\n";
+        cout << "3. Kelola Keranjang & Checkout (DLL & Stack - Akbats)\n";
+        cout << "4. Lacak Pesanan Selesai (SLL - Danis Pixel World)\n";
+        cout << "0. Kembali ke Login\n";
+        cout << "Pilih: ";
+        cin >> pilihan;
+
+        if (pilihan == 1) {
+            printHeader("Katalog Menu");
+            cout << "| ID\t| Harga\t| Katergori\t| Nama Menu\n";
+            cout << "--------------------------------------------------------\n";
+            if (rootMenu == NULL) {
+                cout << "Katalog masih kosong. Resto belum menambahkan menu.\n";
+            } else {
+                tampilKatalogInOrder(rootMenu);
+            }
+            cout << "Tekan Enter untuk kembali...";
+            cin.ignore(); cin.get();
+        }
+        else if (pilihan == 2) {
+            int cariId;
+            cout << "Masukkan ID Menu yang dicari: ";
+            cin >> cariId;
+            Menu* hasilCari = searchMenu(rootMenu, cariId);
+
+            if (hasilCari != NULL) {
+                cout << "Menu ditemukan:\n";
+                cout << "Nama: " << hasilCari->nama << "\n";
+                cout << "Kategori: " << hasilCari->kategori << "\n";
+                cout << "Harga: Rp" << hasilCari->harga << "\n";
+            } else {
+                cout << "Menu dengan ID " << cariId << " tidak ditemukan.\n";
+            }
+            cout << "Tekan Enter untuk kembali...";
+            cin.ignore(); cin.get();
+        }
+        else if (pilihan == 0) {
+            break;
+        }
+        else {
+            cout << "Input tidak valid.\n";
+            cin.ignore(); cin.get();
+        }
+    }
 }
 
 void layarResto() {
-    printHeader("Dashboard Admin Resto");
-    cout << "1. Tambah Menu Baru (Tree - Kungs)\n";
-    cout << "2. Monitor Antrean Dapur (Queue - Danis Pixel World)\n";
-    cout << "3. Laporan Pendapatan (SLL - Danis Pixel World)\n";
-    cout << "0. Kembali ke Login\n";
-    cout << "Pilih: ";
+    int pilihan;
+    while (true) {
+        printHeader("Dashboard Admin Resto");
+        cout << "1. Tambah Menu Baru (Tree - Kungs)\n";
+        cout << "2. Monitor Antrean Dapur (Queue - Danis Pixel World)\n";
+        cout << "3. Laporan Pendapatan (SLL - Danis Pixel World)\n";
+        cout << "0. Kembali ke Login\n";
+        cout << "Pilih: ";
+        cin >> pilihan;
+
+        if (pilihan == 1) {
+            int id, harga;
+            string nama, kategori;
+
+            printHeader("Tambah Menu Baru");
+            cout << "Masukkan ID Menu: "; cin >> id;
+            cout << "Masukkan Nama Menu: "; cin.ignore(); getline(cin, nama);
+            cout << "Masukkan Kategori Menu: "; getline(cin, kategori);
+            cout << "Masukkan Harga Menu: "; cin >> harga;
+
+            rootMenu = insertMenu(rootMenu, id, nama, harga, kategori);
+            cout << "\n[SUKSES] Menu " << nama << " berhasil ditambahkan!\n";
+
+            cout << "Tekan Enter untuk kembali...";
+            cin.ignore(); cin.get();
+        }
+        else if (pilihan == 0) {
+            break;
+        }
+    }
 }
 
 void layarKurir() {
