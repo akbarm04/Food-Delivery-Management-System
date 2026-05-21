@@ -13,6 +13,16 @@ struct Menu {
     Menu* right;
 };
 
+struct CartNode {
+    int idMenu;
+    string namaMenu;
+    int harga;
+    int qty;
+    int subtotal;
+    CartNode* prev;
+    CartNode* next;
+};
+
 struct Order {
     int orderId;
     string namaPemesan;
@@ -20,6 +30,8 @@ struct Order {
 };
 
 Menu* rootMenu = NULL;
+CartNode* headCart = NULL;
+CartNode* tailCart = NULL;
 
 void clearScreen() {
     #ifdef _WIN32
@@ -88,6 +100,83 @@ Menu* searchMenu(Menu* root, int id) {
     return searchMenu(root->left, id);
 }
 
+void pushCart(int id, string nama, int harga, int qty) {
+    CartNode* newNode = new CartNode();
+    newNode->idMenu = id;
+    newNode->namaMenu = nama;
+    newNode->harga = harga;
+    newNode->qty = qty;
+    newNode->subtotal = harga * qty;
+    newNode->prev = NULL;
+    newNode->next = NULL;
+
+    if (headCart == NULL) {
+        headCart = tailCart = newNode;
+    } else {
+        tailCart->next = newNode;
+        newNode->prev = tailCart;
+        tailCart = newNode; 
+    }
+    cout << "\n[BERHASIL] " << qty << "x " << nama << " masuk ke keranjang!\n";
+}
+
+void popCart() {
+    if (tailCart == NULL) {
+        cout << "\n[INFO] Keranjang kosong. Tidak ada yang bisa di-undo.\n";
+        return;
+    }
+    
+    CartNode* temp = tailCart;
+    cout << "\n[UNDO SUKSES] Membatalkan pesanan terakhir: " << temp->namaMenu << "\n";
+    
+    if (headCart == tailCart) {
+        headCart = tailCart = NULL;
+    } else {
+        tailCart = tailCart->prev;
+        tailCart->next = NULL;
+    }
+    delete temp; 
+}
+
+void tampilKeranjang() {
+    if (headCart == NULL) {
+        cout << "\nKeranjang belanja Anda masih kosong.\n";
+        return;
+    }
+    
+    CartNode* temp = headCart;
+    int totalBelanja = 0;
+    
+    cout << "\n--------------------------------------------------------\n";
+    cout << "ID\t| Qty\t| Subtotal\t| Nama Menu\n";
+    cout << "--------------------------------------------------------\n";
+    while (temp != NULL) {
+        cout << temp->idMenu << "\t| " << temp->qty << "\t| Rp" << temp->subtotal << "\t| " << temp->namaMenu << "\n";
+        totalBelanja += temp->subtotal;
+        temp = temp->next;
+    }
+    cout << "--------------------------------------------------------\n";
+    cout << "TOTAL PEMBAYARAN: Rp" << totalBelanja << "\n";
+}
+
+void checkoutCart() {
+    if (headCart == NULL) {
+        cout << "\n[INFO] Keranjang masih kosong. Pilih menu dulu ya!\n";
+        return;
+    }
+    
+    tampilKeranjang();
+    cout << "\nSedang memproses pembayaran...\n";
+    cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Dapur Resto.\n";
+    
+    while (headCart != NULL) {
+        CartNode* temp = headCart;
+        headCart = headCart->next;
+        delete temp;
+    }
+    tailCart = NULL;
+}
+
 void layarPemesan() {
     int pilihan;
     while (true) {
@@ -128,6 +217,55 @@ void layarPemesan() {
             }
             cout << "Tekan Enter untuk kembali...";
             cin.ignore(); cin.get();
+        }
+        else if (pilihan == 3) {
+            int pilCart;
+            while (true) {
+                printHeader("Kelola Keranjang Belanja");
+                cout << "1. Tambah Menu ke Keranjang\n";
+                cout << "2. Lihat Isi Keranjang\n";
+                cout << "3. Undo (Batalkan Item Terakhir)\n";
+                cout << "4. Checkout & Bayar\n";
+                cout << "0. Kembali ke Menu Pemesan\n";
+                cout << "Pilih: ";
+                cin >> pilCart;
+
+                if (pilCart == 1) {
+                    int cariId, qty;
+                    cout << "\nMasukkan ID Menu: "; cin >> cariId;
+                    Menu* menu = searchMenu(rootMenu, cariId);
+                    
+                    if (menu != NULL) {
+                        cout << "Ditemukan: " << menu->nama << " (Rp" << menu->harga << ")\n";
+                        cout << "Masukkan Jumlah (Qty): "; cin >> qty;
+                        pushCart(menu->id, menu->nama, menu->harga, qty);
+                    } else {
+                        cout << "Gagal: Menu ID " << cariId << " tidak ada di katalog.\n";
+                    }
+                    cout << "Tekan Enter untuk lanjut...";
+                    cin.ignore(); cin.get();
+                } 
+                else if (pilCart == 2) {
+                    printHeader("Isi Keranjang Belanja");
+                    tampilKeranjang();
+                    cout << "\nTekan Enter untuk lanjut...";
+                    cin.ignore(); cin.get();
+                } 
+                else if (pilCart == 3) {
+                    popCart();
+                    cout << "\nTekan Enter untuk lanjut...";
+                    cin.ignore(); cin.get();
+                }
+                else if (pilCart == 4) {
+                    printHeader("Checkout Pembayaran");
+                    checkoutCart();
+                    cout << "\nTekan Enter untuk lanjut...";
+                    cin.ignore(); cin.get();
+                }
+                else if (pilCart == 0) {
+                    break;
+                }
+            }
         }
         else if (pilihan == 0) {
             break;
