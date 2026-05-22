@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cstdlib> // buat clear screen
+#include <limits.h> // buat batas maksimal int
 
 using namespace std;
 
@@ -605,12 +606,344 @@ void layarResto() {
     }
 }
 
-void layarKurir() {
-    printHeader("Dashboard Kurir");
-    cout << "1. Radar Orderan Siap Antar (Weighted Graph - Patah)\n";
-    cout << "2. Navigasi Rute Terpendek (Dijkstra/BFS - Patah)\n";
-    cout << "0. Kembali ke Login\n";
-    cout << "Pilih: ";
+bool adaPesananMenungguKurir() {
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+
+        if (pesananSelesai[i].status == 2) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool adaPesananDikirim() {
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+
+        if (pesananSelesai[i].status == 3) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void tampilRadarOrderan() {
+
+    if (jumlahPesananSelesai == 0) {
+        cout << "\nBelum ada pesanan siap antar.\n";
+        return;
+    }
+
+    cout << "\n========== RADAR ORDERAN ==========\n\n";
+
+    bool ada = false;
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+
+        if (pesananSelesai[i].status == 2 || pesananSelesai[i].status == 3) {
+
+            ada = true;
+
+            cout << "Order ID : ";
+
+            if (pesananSelesai[i].id < 10)
+                cout << "00" << pesananSelesai[i].id;
+            else if (pesananSelesai[i].id < 100)
+                cout << "0" << pesananSelesai[i].id;
+            else
+                cout << pesananSelesai[i].id;
+
+            cout << endl;
+
+            cout << "Pesanan : "
+                 << pesananSelesai[i].daftarPesanan << endl;
+
+            cout << "Status  : "
+                 << statusPesanan(pesananSelesai[i].status) << endl;
+
+            cout << "Total   : Rp"
+                 << pesananSelesai[i].totalHarga << endl;
+
+            cout << "-----------------------------------\n";
+        }
+    }
+
+    if (!ada) {
+        cout << "\nTidak ada orderan aktif.\n";
+    }
+}
+
+void kirimPesanan(){
+     int idCari;
+    bool ditemukan = false;
+
+    cout << "\nMasukkan ID pesanan yang akan dikirim: ";
+    cin >> idCari;
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+        if (pesananSelesai[i].id == idCari) {
+            if (pesananSelesai[i].status == 2) {
+                pesananSelesai[i].status = 3;
+
+                cout << "\n[INFO] Pesanan ID ";
+
+                if (idCari < 10)
+                    cout << "00" << idCari;
+                else if (idCari < 100)
+                    cout << "0" << idCari;
+                else
+                    cout << idCari;
+
+                cout << " sedang dikirim kurir.\n";
+            }
+
+            else {
+                cout << "\nPesanan tidak bisa dikirim.\n";
+            }
+
+            ditemukan = true;
+        }
+    }
+
+    if (!ditemukan) {
+        cout << "\nID pesanan tidak ditemukan.\n";
+    }
+}
+
+void selesaikanPengiriman(){
+    int idCari;
+    bool ditemukan = false;
+
+    cout << "\nMasukkan ID pesanan yang selesai diantar: ";
+    cin >> idCari;
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+
+        if (pesananSelesai[i].id == idCari) {
+            if (pesananSelesai[i].status == 3) {
+                pesananSelesai[i].status = 4;
+
+                cout << "\n[SUKSES] Pesanan ID ";
+
+                if (idCari < 10)
+                    cout << "00" << idCari;
+                else if (idCari < 100)
+                    cout << "0" << idCari;
+                else
+                    cout << idCari;
+
+                cout << " telah selesai diantar.\n";
+            }
+
+            else {
+                cout << "\nPesanan belum dikirim kurir.\n";
+            }
+
+            ditemukan = true;
+        }
+    }
+
+    if (!ditemukan) {
+        cout << "\nID pesanan tidak ditemukan.\n";
+    }
+}
+
+void tampilRute(int parent[], int node, string lokasi[]) {
+
+    if (parent[node] == -1) {
+        cout << lokasi[node];
+        return;
+    }
+
+    tampilRute(parent, parent[node], lokasi);
+
+    cout << " -> " << lokasi[node];
+}
+
+void navigasiDijkstra() {
+
+    const int JUMLAH_NODE = 5;
+
+    string lokasi[JUMLAH_NODE] = {
+        "Resto",
+        "Cileunyi",
+        "Ujungberung",
+        "Antapani",
+        "Cibiru"
+    };
+
+    int graph[JUMLAH_NODE][JUMLAH_NODE] = {
+
+      //ResCilUjgAntCib
+        {0, 4, 6, 0, 0}, //Resto
+        {4, 0, 2, 5, 3}, //Cileunyi
+        {6, 2, 0, 1, 4}, //Ujungberung
+        {0, 5, 1, 0, 2}, //Antapani
+        {0, 3, 4, 2, 0}  //Cibiru
+    };
+
+    int tujuan;
+
+    cout << "\n========== NAVIGASI TUJUAN ==========\n";
+    cout << "1. Cileunyi\n";
+    cout << "2. Ujungberung\n";
+    cout << "3. Antapani\n";
+    cout << "4. Cibiru\n";
+
+    cout << "\nPilih tujuan: ";
+    cin >> tujuan;
+
+    if (tujuan < 1 || tujuan > 4) {
+        cout << "\nTujuan tidak valid.\n";
+        return;
+    }
+
+    int start = 0;
+
+    int jarak[JUMLAH_NODE];
+    bool visited[JUMLAH_NODE];
+    int parent[JUMLAH_NODE];
+
+        for (int i = 0; i < JUMLAH_NODE; i++) {
+        jarak[i] = INT_MAX;
+        visited[i] = false;
+        parent[i] = -1;
+    }
+
+    jarak[start] = 0;
+
+    for (int count = 0; count < JUMLAH_NODE - 1; count++) {
+
+        int min = INT_MAX;
+        int u = 0;
+
+        for (int v = 0; v < JUMLAH_NODE; v++) {
+
+            if (!visited[v] && jarak[v] <= min) {
+                min = jarak[v];
+                u = v;
+            }
+        }
+
+        visited[u] = true;
+
+        for (int v = 0; v < JUMLAH_NODE; v++) {
+
+            if (!visited[v]
+                && graph[u][v]
+                && jarak[u] != INT_MAX
+                && jarak[u] + graph[u][v] < jarak[v]) {
+
+                jarak[v] = jarak[u] + graph[u][v];
+                parent[v] = u;
+            }
+        }
+    }
+
+    cout << "\n===== HASIL NAVIGASI =====\n";
+
+    cout << "Lokasi Awal : Resto\n";
+
+    cout << "Tujuan      : "
+         << lokasi[tujuan]
+         << endl;
+
+    cout << "Rute        : ";
+
+    tampilRute(parent, tujuan, lokasi);
+
+    cout << endl;
+
+    cout << "Jarak Tempuh: "
+        << jarak[tujuan]
+        << " km\n";
+}
+
+void layarKurir() {         
+
+    int pilihan;
+
+    while (true) {
+
+        printHeader("Dashboard Kurir");
+
+        cout << "1. Radar Orderan Siap Antar\n";
+        cout << "2. Kirim Pesanan\n";
+        cout << "3. Selesaikan Pengiriman\n";
+        cout << "4. Navigasi Rute Terpendek\n";
+        cout << "0. Kembali ke Login\n";
+        cout << "Pilih: ";
+        cin >> pilihan;
+
+        if (pilihan == 1) {
+
+            printHeader("Radar Orderan");
+            tampilRadarOrderan();
+
+            cout << "\nTekan Enter untuk kembali...";
+            cin.ignore();
+            cin.get();
+        }
+
+        else if (pilihan == 2) {
+
+        printHeader("Kirim Pesanan");
+
+        if (!adaPesananMenungguKurir()) {
+
+            cout << "\nTidak ada orderan aktif.\n";
+        }
+        else {
+
+            tampilRadarOrderan();
+            kirimPesanan();
+        }
+
+        cout << "\nTekan Enter untuk kembali...";
+
+        cin.ignore();
+        cin.get();
+    }
+
+        else if (pilihan == 3) {
+
+        printHeader("Selesaikan Pengiriman");
+
+        if (!adaPesananDikirim()) {
+
+            cout << "\nTidak ada orderan aktif.\n";
+        }
+        else {
+
+            tampilRadarOrderan();
+            selesaikanPengiriman();
+        }
+
+        cout << "\nTekan Enter untuk kembali...";
+
+        cin.ignore();
+        cin.get();
+    }
+
+    else if (pilihan == 4) {
+
+    printHeader("Navigasi Kurir");
+
+    navigasiDijkstra();
+
+    cout << "\nTekan Enter untuk kembali...";
+
+    cin.ignore();
+    cin.get();
+}
+
+        else if (pilihan == 0) {
+            break;
+        }
+    }
 }
 
 void jalankanSistem() {
