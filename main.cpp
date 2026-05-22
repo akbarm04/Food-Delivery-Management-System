@@ -29,9 +29,39 @@ struct Order {
     int status; 
 };
 
+struct AntreDapur {
+    int id;
+    string daftarPesanan;
+    int totalHarga;
+    int status;
+};
+
+struct HistoryNode {
+    AntreDapur data;
+    HistoryNode* next;
+};
+
 Menu* rootMenu = NULL;
 CartNode* headCart = NULL;
 CartNode* tailCart = NULL;
+
+AntreDapur antrean[100];
+AntreDapur pesananSelesai[100];
+
+int jumlahPesananSelesai = 0;
+int frontAntrean = -1;
+int rearAntrean = -1;
+int idAntrean = 1;
+
+HistoryNode* headHistory = NULL;
+
+string statusPesanan(int status) {
+    if (status == 1) return "Sedang dibuat";
+    if (status == 2) return "Menunggu Kurir";
+    if (status == 3) return "Sedang dikirim kurir";
+    if (status == 4) return "Selesai";
+    return "Unknown";
+}
 
 void clearScreen() {
     #ifdef _WIN32
@@ -159,6 +189,27 @@ void tampilKeranjang() {
     cout << "TOTAL PEMBAYARAN: Rp" << totalBelanja << "\n";
 }
 
+void enqueueDapur(string daftarPesanan, int totalHarga) {
+
+    if (rearAntrean == 99) {
+        cout << "\nAntrean dapur penuh!\n";
+        return;
+    }
+
+    if (frontAntrean == -1) {
+        frontAntrean = 0;
+    }
+
+    rearAntrean++;
+
+    antrean[rearAntrean].id = idAntrean++;
+    antrean[rearAntrean].daftarPesanan = daftarPesanan;
+    antrean[rearAntrean].totalHarga = totalHarga;
+    antrean[rearAntrean].status = 1; // Sedang dibuat
+
+    cout << "\n[QUEUE] Pesanan masuk ke antrean dapur!\n";
+}
+
 void checkoutCart() {
     if (headCart == NULL) {
         cout << "\n[INFO] Keranjang masih kosong. Pilih menu dulu ya!\n";
@@ -169,12 +220,206 @@ void checkoutCart() {
     cout << "\nSedang memproses pembayaran...\n";
     cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Dapur Resto.\n";
     
+    string daftarPesanan = "";
+    int totalBelanja = 0;
+
+    CartNode* tempData = headCart;
+
+    while (tempData != NULL) {
+
+        daftarPesanan += to_string(tempData->qty)
+                    + "x "
+                    + tempData->namaMenu;
+
+        if (tempData->next != NULL) {
+            daftarPesanan += ", ";
+        }
+
+        totalBelanja += tempData->subtotal;
+
+        tempData = tempData->next;
+    }
+
+    // kirim ke antrean dapur
+    enqueueDapur(daftarPesanan, totalBelanja);
     while (headCart != NULL) {
         CartNode* temp = headCart;
         headCart = headCart->next;
         delete temp;
     }
     tailCart = NULL;
+}
+
+void tambahHistory(AntreDapur dataPesanan) {
+
+    HistoryNode* newNode = new HistoryNode();
+
+    newNode->data = dataPesanan;
+    newNode->next = NULL;
+
+    if (headHistory == NULL) {
+        headHistory = newNode;
+    }
+    else {
+
+        HistoryNode* temp = headHistory;
+
+        while (temp->next != NULL) {
+            temp = temp->next;
+        }
+
+        temp->next = newNode;
+    }
+}
+
+void tampilAntreanDapur() {
+
+    if (frontAntrean == -1) {
+
+        cout << "\nTidak ada antrean dapur.\n";
+        return;
+    }
+
+    cout << "\n================ ANTREAN DAPUR ================\n\n";
+
+    for (int i = frontAntrean; i <= rearAntrean; i++) {
+
+        cout << "[-->] Antrean ID ";
+
+        if (antrean[i].id < 10)
+            cout << "00" << antrean[i].id << endl;
+        else if (antrean[i].id < 100)
+            cout << "0" << antrean[i].id << endl;
+        else
+            cout << antrean[i].id << endl;
+
+        cout << "      Pesanan : "
+             << antrean[i].daftarPesanan << endl;
+
+        cout << "      Total   : Rp"
+             << antrean[i].totalHarga << endl;
+
+        cout << endl;
+    }
+}
+
+void selesaikanPesanan() {
+
+    if (frontAntrean == -1) {
+
+        cout << "\nTidak ada antrean untuk diproses.\n";
+        return;
+    }
+
+    AntreDapur selesai = antrean[frontAntrean];
+    selesai.status = 2; // Menunggu kurir
+    
+
+    cout << "\n[SELESAI]\n";
+    cout << "Pesanan ID ";
+
+    if (selesai.id < 10)
+        cout << "00" << selesai.id;
+    else if (selesai.id < 100)
+        cout << "0" << selesai.id;
+    else
+        cout << selesai.id;
+
+    cout << " selesai dimasak.\n";
+
+
+    pesananSelesai[jumlahPesananSelesai] = selesai;
+    jumlahPesananSelesai++;
+
+    // masuk history
+    tambahHistory(selesai);
+
+    // dequeue
+    if (frontAntrean == rearAntrean) {
+
+        frontAntrean = rearAntrean = -1;
+    }
+    else {
+
+        frontAntrean++;
+    }
+}
+
+void tampilHistoryDapur() {
+
+    if (headHistory == NULL) {
+
+        cout << "\nHistory dapur masih kosong.\n";
+        return;
+    }
+
+    HistoryNode* temp = headHistory;
+
+    int totalPendapatan = 0;
+
+    cout << "\n================ HISTORY DAPUR ================\n\n";
+
+    while (temp != NULL) {
+
+        cout << "[-->] ID ";
+
+        if (temp->data.id < 10)
+            cout << "00" << temp->data.id << endl;
+        else if (temp->data.id < 100)
+            cout << "0" << temp->data.id << endl;
+        else
+            cout << temp->data.id << endl;
+
+        cout << "      Pesanan : "
+             << temp->data.daftarPesanan << endl;
+
+        cout << "      Total   : Rp"
+             << temp->data.totalHarga << endl;
+
+        cout << endl;
+
+        totalPendapatan += temp->data.totalHarga;
+
+        temp = temp->next;
+    }
+
+    cout << "TOTAL PENDAPATAN : Rp"
+         << totalPendapatan << endl;
+}
+
+void lacakPesanan() {
+    bool adaPesanan = false;
+    if (frontAntrean != -1) {
+        for (int i = frontAntrean; i <= rearAntrean; i++) {
+            cout << "[-->] Pesanan ID ";
+            if (antrean[i].id < 10) cout << "00" << antrean[i].id;
+            else if (antrean[i].id < 100) cout << "0" << antrean[i].id;
+            else cout << antrean[i].id;
+            cout << endl;
+            cout << "      Pesanan : " << antrean[i].daftarPesanan << endl;
+            cout << "      Status  : " << statusPesanan(antrean[i].status) << endl;
+            cout << "      Total   : Rp" << antrean[i].totalHarga << endl;
+            cout << endl;
+            adaPesanan = true;
+        }
+    }
+
+    for (int i = 0; i < jumlahPesananSelesai; i++) {
+        cout << "[-->] Pesanan ID ";
+        if (pesananSelesai[i].id < 10) cout << "00" << pesananSelesai[i].id;
+        else if (pesananSelesai[i].id < 100) cout << "0" << pesananSelesai[i].id;
+        else cout << pesananSelesai[i].id;
+        cout << endl;
+        cout << "      Pesanan : " << pesananSelesai[i].daftarPesanan << endl;
+        cout << "      Status  : " << statusPesanan(pesananSelesai[i].status) << endl;
+        cout << "      Total   : Rp" << pesananSelesai[i].totalHarga << endl;
+        cout << endl;
+        adaPesanan = true;
+    }
+
+    if (!adaPesanan) {
+        cout << "\nBelum ada pesanan.\n";
+    }
 }
 
 void layarPemesan() {
@@ -184,7 +429,7 @@ void layarPemesan() {
         cout << "1. Lihat Katalog Menu (Tree - Kungs)\n";
         cout << "2. Cari Menu berdasarkan ID (Tree)\n";
         cout << "3. Kelola Keranjang & Checkout (DLL & Stack - Akbats)\n";
-        cout << "4. Lacak Pesanan Selesai (SLL - Danis Pixel World)\n";
+        cout << "4. Lacak Status Pesanan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
         cin >> pilihan;
@@ -267,6 +512,15 @@ void layarPemesan() {
                 }
             }
         }
+        else if (pilihan == 4){
+            printHeader("Lacak Pesanan");
+
+            lacakPesanan();
+
+            cout << "\nTekan Enter untuk kembali...";
+            cin.ignore();
+            cin.get();
+        }
         else if (pilihan == 0) {
             break;
         }
@@ -282,13 +536,14 @@ void layarResto() {
     while (true) {
         printHeader("Dashboard Admin Resto");
         cout << "1. Tambah Menu Baru (Tree - Kungs)\n";
-        cout << "2. Monitor Antrean Dapur (Queue - Danis Pixel World)\n";
-        cout << "3. Laporan Pendapatan (SLL - Danis Pixel World)\n";
+        cout << "2. Monitor Antrean Dapur\n";
+        cout << "3. History dapur & Laporan Pendapatan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
         cin >> pilihan;
 
         if (pilihan == 1) {
+
             int id, harga;
             string nama, kategori;
 
@@ -304,6 +559,46 @@ void layarResto() {
             cout << "Tekan Enter untuk kembali...";
             cin.ignore(); cin.get();
         }
+
+        else if (pilihan == 2) {
+
+            int pilihAntrean;
+
+            while (true) {
+
+                printHeader("Monitor Antrean Dapur");
+                tampilAntreanDapur();
+
+                cout << "1. Selesaikan Pesanan Paling Depan\n";
+                cout << "0. Kembali ke Menu Admin\n";
+                cout << "Pilih: ";
+                cin >> pilihAntrean;
+
+                if (pilihAntrean == 1) {
+
+                    selesaikanPesanan();
+
+                    cout << "\nTekan Enter untuk lanjut...";
+                    cin.ignore();
+                    cin.get();
+                }
+                else if (pilihAntrean == 0) {
+                    break;
+                }
+            }
+        }
+
+        else if (pilihan == 3) {
+
+            printHeader("History Dapur");
+
+            tampilHistoryDapur();
+
+            cout << "\nTekan Enter untuk kembali...";
+            cin.ignore();
+            cin.get();
+        }
+
         else if (pilihan == 0) {
             break;
         }
