@@ -219,8 +219,6 @@ void checkoutCart() {
     cout << "+--------------------------------------------------------+\n";
     
     tampilKeranjang();
-    cout << "\nSedang memproses pembayaran...\n";
-    cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Dapur Resto.\n";
     
     string daftarPesanan = "";
     int totalBelanja = 0;
@@ -228,7 +226,6 @@ void checkoutCart() {
     CartNode* tempData = headCart;
 
     while (tempData != NULL) {
-
         daftarPesanan += to_string(tempData->qty)
                     + "x "
                     + tempData->namaMenu;
@@ -238,24 +235,36 @@ void checkoutCart() {
         }
 
         totalBelanja += tempData->subtotal;
-
         tempData = tempData->next;
     }
 
     int tujuanKirim;
-        cout << "\nPilih Lokasi Pengiriman:\n";
-        cout << "1. Cileunyi\n2. Ujungberung\n3. Antapani\n4. Cibiru\n";
-        cout << "Tujuan Anda: ";
-        cin >> tujuanKirim;
+    cout << "\nPilih Lokasi Pengiriman:\n";
+    cout << "1. Cileunyi\n2. Ujungberung\n3. Antapani\n4. Cibiru\n";
+    cout << "Tujuan Anda: ";
+    cin >> tujuanKirim;
 
-    // kirim ke antrean dapur
-    enqueueDapur(daftarPesanan, totalBelanja, tujuanKirim);
-    while (headCart != NULL) {
-        CartNode* temp = headCart;
-        headCart = headCart->next;
-        delete temp;
+    char konfirmasi;
+    cout << "\nTotal tagihan Anda Rp" << totalBelanja << ".\n";
+    cout << "Apakah Anda yakin ingin membayar? (Y/N): ";
+    cin >> konfirmasi;
+
+    if (konfirmasi == 'Y' || konfirmasi == 'y') {
+        cout << "\nSedang memproses pembayaran...\n";
+        
+        // kirim ke antrean dapur
+        enqueueDapur(daftarPesanan, totalBelanja, tujuanKirim);
+        
+        while (headCart != NULL) {
+            CartNode* temp = headCart;
+            headCart = headCart->next;
+            delete temp;
+        }
+        tailCart = NULL;
+        cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Dapur Resto.\n";
+    } else {
+        cout << "\n[INFO] Checkout dibatalkan. Pesanan masih tersimpan di keranjang.\n";
     }
-    tailCart = NULL;
 }
 
 void tambahHistory(AntreDapur dataPesanan) {
@@ -496,6 +505,15 @@ void layarPemesan() {
                 cin >> pilCart;
 
                 if (pilCart == 1) {
+                    printHeader("Tambah Menu ke Keranjang");
+                    cout << "| ID\t| Harga\t| Kategori\t| Nama Menu\n";
+                    cout << "--------------------------------------------------------\n";
+                    if (rootMenu == NULL) {
+                        cout << "Katalog masih kosong.\n";
+                    } else {
+                        tampilKatalogInOrder(rootMenu);
+                    }
+                    cout << "--------------------------------------------------------\n";
                     int cariId, qty;
                     cout << "\nMasukkan ID Menu: "; cin >> cariId;
                     Menu* menu = searchMenu(rootMenu, cariId);
@@ -554,10 +572,10 @@ void layarPemesan() {
 void layarResto() {
     int pilihan;
     while (true) {
-        printHeader("Dashboard Admin Resto");
+        printHeader("DASHBOARD ADMIN RESTO");
         cout << "1. Tambah Menu Baru\n";
         cout << "2. Monitor Antrean Dapur\n";
-        cout << "3. History dapur & Laporan Pendapatan\n";
+        cout << "3. History Dapur & Laporan Pendapatan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
 
@@ -570,32 +588,44 @@ void layarResto() {
         }
 
         if (pilihan == 1) {
-
             int id, harga;
             string nama, kategori;
+            char konfirmasi;
 
-            printHeader("Tambah Menu Baru");
+            printHeader("TAMBAH MENU BARU");
+            cout << "Ketik '0' pada ID untuk membatalkan.\n\n";
+            
             cout << "Masukkan ID Menu: "; cin >> id;
+            if (id == 0) {
+                cout << "\n[INFO] Penambahan menu dibatalkan.\n";
+                cout << "Tekan Enter untuk kembali...";
+                cin.ignore(); cin.get();
+                continue; 
+            }
+            
             cout << "Masukkan Nama Menu: "; 
             cin.ignore(10000, '\n');
             getline(cin, nama);
             cout << "Masukkan Kategori Menu: "; getline(cin, kategori);
             cout << "Masukkan Harga Menu: "; cin >> harga;
 
-            rootMenu = insertMenu(rootMenu, id, nama, harga, kategori);
-            cout << "\n[SUKSES] Menu " << nama << " berhasil ditambahkan!\n";
+            cout << "\nSimpan menu ini ke dalam Katalog? (Y/N): ";
+            cin >> konfirmasi;
+
+            if (konfirmasi == 'Y' || konfirmasi == 'y') {
+                rootMenu = insertMenu(rootMenu, id, nama, harga, kategori);
+                cout << "\n[SUKSES] Menu " << nama << " berhasil ditambahkan!\n";
+            } else {
+                cout << "\n[INFO] Penambahan menu dibatalkan.\n";
+            }
 
             cout << "Tekan Enter untuk kembali...";
-            cin.get();
+            cin.ignore(); cin.get();
         }
-
         else if (pilihan == 2) {
-
             int pilihAntrean;
-
             while (true) {
-
-                printHeader("Monitor Antrean Dapur");
+                printHeader("MONITOR ANTREAN DAPUR");
                 tampilAntreanDapur();
 
                 cout << "1. Selesaikan Pesanan Paling Depan\n";
@@ -604,9 +634,7 @@ void layarResto() {
                 cin >> pilihAntrean;
 
                 if (pilihAntrean == 1) {
-
                     selesaikanPesanan();
-
                     cout << "\nTekan Enter untuk lanjut...";
                     cin.ignore();
                     cin.get();
@@ -616,18 +644,14 @@ void layarResto() {
                 }
             }
         }
-
         else if (pilihan == 3) {
-
-            printHeader("History Dapur");
-
+            printHeader("HISTORY DAPUR");
             tampilHistoryDapur();
 
             cout << "\nTekan Enter untuk kembali...";
             cin.ignore();
             cin.get();
         }
-
         else if (pilihan == 0) {
             break;
         }
@@ -659,7 +683,6 @@ bool adaPesananDikirim() {
 }
 
 void tampilRadarOrderan() {
-
     if (jumlahPesananSelesai == 0) {
         cout << "\nBelum ada pesanan siap antar.\n";
         return;
@@ -670,30 +693,18 @@ void tampilRadarOrderan() {
     bool ada = false;
 
     for (int i = 0; i < jumlahPesananSelesai; i++) {
-
         if (pesananSelesai[i].status == 2 || pesananSelesai[i].status == 3) {
-
             ada = true;
 
             cout << "Order ID : ";
-
-            if (pesananSelesai[i].id < 10)
-                cout << "00" << pesananSelesai[i].id;
-            else if (pesananSelesai[i].id < 100)
-                cout << "0" << pesananSelesai[i].id;
-            else
-                cout << pesananSelesai[i].id;
-
+            if (pesananSelesai[i].id < 10) cout << "00" << pesananSelesai[i].id;
+            else if (pesananSelesai[i].id < 100) cout << "0" << pesananSelesai[i].id;
+            else cout << pesananSelesai[i].id;
             cout << endl;
 
-            cout << "Pesanan : "
-                 << pesananSelesai[i].daftarPesanan << endl;
-
-            cout << "Status  : "
-                 << statusPesanan(pesananSelesai[i].status) << endl;
-
-            cout << "Total   : Rp"
-                 << pesananSelesai[i].totalHarga << endl;
+            cout << "Pesanan  : " << pesananSelesai[i].daftarPesanan << endl;
+            cout << "Status   : " << statusPesanan(pesananSelesai[i].status) << endl;
+            cout << "Total    : Rp" << pesananSelesai[i].totalHarga << endl;
 
             string namaLokasi = "Unknown";
             if (pesananSelesai[i].idTujuan == 1) namaLokasi = "Cileunyi";
@@ -701,6 +712,7 @@ void tampilRadarOrderan() {
             else if (pesananSelesai[i].idTujuan == 3) namaLokasi = "Antapani";
             else if (pesananSelesai[i].idTujuan == 4) namaLokasi = "Cibiru";
 
+            cout << "Tujuan   : " << namaLokasi << endl;
             cout << "-----------------------------------\n";
         }
     }
@@ -798,9 +810,7 @@ void tampilRute(int parent[], int node, string lokasi[]) {
 }
 
 void navigasiDijkstra() {
-
     const int JUMLAH_NODE = 5;
-
     string lokasi[JUMLAH_NODE] = {
         "Resto",
         "Cileunyi",
@@ -810,7 +820,6 @@ void navigasiDijkstra() {
     };
 
     int graph[JUMLAH_NODE][JUMLAH_NODE] = {
-
       //ResCilUjgAntCib
         {0, 4, 6, 0, 0}, //Resto
         {4, 0, 2, 5, 3}, //Cileunyi
@@ -820,7 +829,6 @@ void navigasiDijkstra() {
     };
 
     int tujuan;
-
     cout << "\n========== NAVIGASI TUJUAN ==========\n";
     cout << "1. Cileunyi\n";
     cout << "2. Ujungberung\n";
@@ -836,12 +844,11 @@ void navigasiDijkstra() {
     }
 
     int start = 0;
-
     int jarak[JUMLAH_NODE];
     bool visited[JUMLAH_NODE];
     int parent[JUMLAH_NODE];
 
-        for (int i = 0; i < JUMLAH_NODE; i++) {
+    for (int i = 0; i < JUMLAH_NODE; i++) {
         jarak[i] = INT_MAX;
         visited[i] = false;
         parent[i] = -1;
@@ -850,12 +857,10 @@ void navigasiDijkstra() {
     jarak[start] = 0;
 
     for (int count = 0; count < JUMLAH_NODE - 1; count++) {
-
         int min = INT_MAX;
         int u = 0;
 
         for (int v = 0; v < JUMLAH_NODE; v++) {
-
             if (!visited[v] && jarak[v] <= min) {
                 min = jarak[v];
                 u = v;
@@ -865,12 +870,7 @@ void navigasiDijkstra() {
         visited[u] = true;
 
         for (int v = 0; v < JUMLAH_NODE; v++) {
-
-            if (!visited[v]
-                && graph[u][v]
-                && jarak[u] != INT_MAX
-                && jarak[u] + graph[u][v] < jarak[v]) {
-
+            if (!visited[v] && graph[u][v] && jarak[u] != INT_MAX && jarak[u] + graph[u][v] < jarak[v]) {
                 jarak[v] = jarak[u] + graph[u][v];
                 parent[v] = u;
             }
@@ -878,24 +878,12 @@ void navigasiDijkstra() {
     }
 
     cout << "\n===== HASIL NAVIGASI =====\n";
-
     cout << "Lokasi Awal : Resto\n";
-
-    cout << "Tujuan      : "
-         << lokasi[tujuan]
-         << endl;
-
+    cout << "Tujuan      : " << lokasi[tujuan] << endl;
     cout << "Rute        : ";
-
     tampilRute(parent, tujuan, lokasi);
-
-    cout << endl;
-
-    cout << "Jarak Tempuh: "
-        << jarak[tujuan]
-        << " km\n";
+    cout << "\n\nJarak Tempuh: " << jarak[tujuan] << " km\n";
 }
-
 void layarKurir() {         
 
     int pilihan;
