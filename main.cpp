@@ -24,12 +24,6 @@ struct CartNode {
     CartNode* next;
 };
 
-struct Order {
-    int orderId;
-    string namaPemesan;
-    int status; 
-};
-
 struct AntreDapur {
     int id;
     string daftarPesanan;
@@ -306,6 +300,11 @@ void tampilAntreanDapur() {
 
 void selesaikanPesanan() {
 
+    if (jumlahPesananSelesai >= 100) {
+    cout << "\n[Penuh] Kapasitas memori riwayat sudah penuh!\n";
+    return;
+}
+
     if (frontAntrean == -1) {
 
         cout << "\nTidak ada antrean untuk diproses.\n";
@@ -433,7 +432,14 @@ void layarPemesan() {
         cout << "4. Lacak Status Pesanan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
-        cin >> pilihan;
+
+        if (!(cin >> pilihan)) {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                cout << "Input harus angka!\n";
+                cin.get();
+                continue;
+            }
 
         if (pilihan == 1) {
             printHeader("Katalog Menu");
@@ -541,7 +547,14 @@ void layarResto() {
         cout << "3. History dapur & Laporan Pendapatan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
-        cin >> pilihan;
+
+        if (!(cin >> pilihan)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Input harus angka!\n";
+            cin.get();
+            continue;
+        }
 
         if (pilihan == 1) {
 
@@ -550,7 +563,9 @@ void layarResto() {
 
             printHeader("Tambah Menu Baru");
             cout << "Masukkan ID Menu: "; cin >> id;
-            cout << "Masukkan Nama Menu: "; cin.ignore(); getline(cin, nama);
+            cout << "Masukkan Nama Menu: "; 
+            cin.ignore(10000, '\n');
+            getline(cin, nama);
             cout << "Masukkan Kategori Menu: "; getline(cin, kategori);
             cout << "Masukkan Harga Menu: "; cin >> harga;
 
@@ -876,7 +891,14 @@ void layarKurir() {
         cout << "4. Navigasi Rute Terpendek\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
-        cin >> pilihan;
+
+        if (!(cin >> pilihan)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Input harus angka!\n";
+            cin.get();
+            continue;
+        }
 
         if (pilihan == 1) {
 
@@ -968,15 +990,12 @@ void jalankanSistem() {
         switch (pilihanRole) {
             case 1:
                 layarPemesan();
-                cin.ignore(); cin.get(); 
                 break;
             case 2:
                 layarResto();
-                cin.ignore(); cin.get();
                 break;
             case 3:
                 layarKurir();
-                cin.ignore(); cin.get();
                 break;
             case 0:
                 aplikasiBerjalan = false;
