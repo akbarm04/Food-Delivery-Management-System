@@ -1005,6 +1005,20 @@ void MenuAwal() {
     }
 }
 
+int login(string roleName, string correctUser, string correctPass) {
+    string username, password;
+    cout << "\n--- Login " << roleName << " ---\n";
+    cout << "Username: "; cin >> username;
+    cout << "Password: "; cin >> password;
+    
+    if (username == correctUser && password == correctPass) {
+        return 1;
+    }
+    
+    cout << "Login gagal! Username atau password salah.\n";
+    return 0;
+}
+
 void jalankanSistem() {
     MenuAwal();
     int pilihanRole;
@@ -1027,13 +1041,28 @@ void jalankanSistem() {
 
         switch (pilihanRole) {
             case 1:
-                layarPemesan();
+                if (login("Pemesan", "pemesan", "123") == 1) {
+                    layarPemesan();
+                } else {
+                    cout << "Tekan Enter untuk kembali...";
+                    cin.ignore(); cin.get();
+                }
                 break;
             case 2:
-                layarResto();
+                if (login("Admin Resto", "admin", "123") == 1) {
+                    layarResto();
+                } else {
+                    cout << "Tekan Enter untuk kembali...";
+                    cin.ignore(); cin.get();
+                }
                 break;
             case 3:
-                layarKurir();
+                if (login("Kurir", "kurir", "123") == 1) {
+                    layarKurir();
+                } else {
+                    cout << "Tekan Enter untuk kembali...";
+                    cin.ignore(); cin.get();
+                }
                 break;
             case 0:
                 aplikasiBerjalan = false;
