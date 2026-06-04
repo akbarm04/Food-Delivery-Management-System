@@ -41,6 +41,20 @@ Menu* rootMenu = NULL;
 CartNode* headCart = NULL;
 CartNode* tailCart = NULL;
 
+Menu daftarMenu[10] = {
+    {1, "Americano", 15000, "Minuman"},
+    {2, "Cappuccino", 18000, "Minuman"},
+    {3, "Latte", 20000, "Minuman"},
+    {4, "Matcha", 22000, "Minuman"},
+    {5, "Chocolate", 21000, "Minuman"},
+    {6, "Croissant", 12000, "Makanan"},
+    {7, "Donat", 10000, "Makanan"},
+    {8, "Sandwich", 17000, "Makanan"},
+    {9, "French Fries", 15000, "Makanan"},
+    {10, "Cheesecake", 25000, "Makanan"}
+};
+
+
 AntreDapur antrean[100];
 AntreDapur pesananSelesai[100];
 
@@ -61,7 +75,7 @@ string statusPesanan(int status) {
 
 void clearScreen() {
     #ifdef _WIN32
-        system("cls");
+    system("cls");
     #else
         system("clear");
     #endif
@@ -113,6 +127,16 @@ void tampilKatalogInOrder(Menu* root) {
         tampilKatalogInOrder(root->left);
         cout << "| " << root->id << "\t| Rp" << root->harga << "\t| " << root->kategori << "\t| " << root->nama << endl;
         tampilKatalogInOrder(root->right);
+    }
+}
+
+void tampilkanMenu(Menu menu[], int size) {
+    cout << "\n===== MENU CAFE =====" << endl;
+    for(int i = 0; i < size; i++) {
+        cout << menu[i].id << ". "
+             << menu[i].nama << " - "
+             << menu[i].kategori << " - Rp"
+             << menu[i].harga << endl;
     }
 }
 
@@ -465,7 +489,7 @@ void layarPemesan() {
 
         if (pilihan == 1) {
             printHeader("Katalog Menu");
-            cout << "| ID\t| Harga\t| Katergori\t| Nama Menu\n";
+            cout << "| ID\t| Harga\t| Kategori\t| Nama Menu\n";
             cout << "--------------------------------------------------------\n";
             if (rootMenu == NULL) {
                 cout << "Katalog masih kosong. Resto belum menambahkan menu.\n";
@@ -975,7 +999,14 @@ void layarKurir() {
     }
 }
 
+void MenuAwal() {
+    for (int i = 0; i < 10; i++) {
+        rootMenu = insertMenu(rootMenu, daftarMenu[i].id, daftarMenu[i].nama, daftarMenu[i].harga, daftarMenu[i].kategori);
+    }
+}
+
 void jalankanSistem() {
+    MenuAwal();
     int pilihanRole;
     bool aplikasiBerjalan = true;
 
