@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib> // buat clear screen
 #include <limits.h> // buat batas maksimal int
+#include <iomanip> // buat format tabel
 
 using namespace std;
 
@@ -125,7 +126,7 @@ Menu* insertMenu(Menu* root, int id, string nama, int harga, string kategori) {
 void tampilKatalogInOrder(Menu* root) {
     if (root != NULL) {
         tampilKatalogInOrder(root->left);
-        cout << "| " << root->id << "\t| Rp" << root->harga << "\t| " << root->kategori << "\t| " << root->nama << endl;
+        cout << "| " << left << setw(4) << root->id << " | " << left << setw(15) << root->nama << " | " << left << setw(15) << root->kategori << " | Rp" << root->harga << endl;
         tampilKatalogInOrder(root->right);
     }
 }
@@ -148,6 +149,29 @@ Menu* searchMenu(Menu* root, int id) {
         return searchMenu(root->right, id);
     }
     return searchMenu(root->left, id);
+}
+
+Menu* searchMenu(Menu* root, string keyword) {
+    if (root == NULL || keyword == "") return NULL;
+    
+    string namaLower = "";
+    for (int i = 0; i < root->nama.length(); i++) {
+        namaLower += tolower(root->nama[i]);
+    }
+    
+    string keywordLower = "";
+    for (int i = 0; i < keyword.length(); i++) {
+        keywordLower += tolower(keyword[i]);
+    }
+    
+    if (namaLower == keywordLower) {
+        return root;
+    }
+    
+    Menu* foundLeft = searchMenu(root->left, keyword);
+    if (foundLeft != NULL) return foundLeft;
+    
+    return searchMenu(root->right, keyword);
 }
 
 void pushCart(int id, string nama, int harga, int qty) {
@@ -212,7 +236,7 @@ void tampilKeranjang() {
 void enqueueDapur(string daftarPesanan, int totalHarga, int tujuan) {
 
     if (rearAntrean == 99) {
-        cout << "\nAntrean dapur penuh!\n";
+        cout << "\nAntrean pesanan penuh!\n";
         return;
     }
 
@@ -228,7 +252,7 @@ void enqueueDapur(string daftarPesanan, int totalHarga, int tujuan) {
     antrean[rearAntrean].status = 1; // Sedang dibuat
     antrean[rearAntrean].idTujuan = tujuan;
 
-    cout << "\n[QUEUE] Pesanan masuk ke antrean dapur!\n";
+    cout << "\n[QUEUE] Pesanan masuk ke antrean!\n";
 }
 
 void checkoutCart() {
@@ -285,7 +309,7 @@ void checkoutCart() {
             delete temp;
         }
         tailCart = NULL;
-        cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Dapur Resto.\n";
+        cout << "[SUKSES] Pembayaran Berhasil! Pesanan diteruskan ke Resto.\n";
     } else {
         cout << "\n[INFO] Checkout dibatalkan. Pesanan masih tersimpan di keranjang.\n";
     }
@@ -317,11 +341,11 @@ void tampilAntreanDapur() {
 
     if (frontAntrean == -1) {
 
-        cout << "\nTidak ada antrean dapur.\n";
+        cout << "\nTidak ada antrean pesanan.\n";
         return;
     }
 
-    cout << "\n================ ANTREAN DAPUR ================\n\n";
+    cout << "\n================ ANTREAN PESANAN ================\n\n";
 
     for (int i = frontAntrean; i <= rearAntrean; i++) {
 
@@ -395,7 +419,7 @@ void tampilHistoryDapur() {
 
     if (headHistory == NULL) {
 
-        cout << "\nHistory dapur masih kosong.\n";
+        cout << "\nRiwayat pesanan masih kosong.\n";
         return;
     }
 
@@ -403,7 +427,7 @@ void tampilHistoryDapur() {
 
     int totalPendapatan = 0;
 
-    cout << "\n================ HISTORY DAPUR ================\n\n";
+    cout << "\n================ RIWAYAT PESANAN ================\n\n";
 
     while (temp != NULL) {
 
@@ -473,7 +497,7 @@ void layarPemesan() {
     while (true) {
         printHeader("DASHBOARD PEMESAN");
         cout << "1. Lihat Katalog Menu\n";
-        cout << "2. Cari Menu berdasarkan ID\n";
+        cout << "2. Cari Menu berdasarkan Nama\n";
         cout << "3. Kelola Keranjang & Checkout\n";
         cout << "4. Lacak Status Pesanan\n";
         cout << "0. Kembali ke Login\n";
@@ -489,7 +513,7 @@ void layarPemesan() {
 
         if (pilihan == 1) {
             printHeader("Katalog Menu");
-            cout << "| ID\t| Harga\t| Kategori\t| Nama Menu\n";
+            cout << "| " << left << setw(4) << "ID" << " | " << left << setw(15) << "Nama Menu" << " | " << left << setw(15) << "Kategori" << " | Harga\n";
             cout << "--------------------------------------------------------\n";
             if (rootMenu == NULL) {
                 cout << "Katalog masih kosong. Resto belum menambahkan menu.\n";
@@ -500,21 +524,23 @@ void layarPemesan() {
             cin.ignore(); cin.get();
         }
         else if (pilihan == 2) {
-            int cariId;
-            cout << "Masukkan ID Menu yang dicari: ";
-            cin >> cariId;
-            Menu* hasilCari = searchMenu(rootMenu, cariId);
+            string keyword;
+            cout << "Masukkan Nama Menu yang dicari (contoh: Latte): ";
+            cin.ignore(10000, '\n');
+            getline(cin, keyword);
+            Menu* hasilCari = searchMenu(rootMenu, keyword);
 
             if (hasilCari != NULL) {
-                cout << "Menu ditemukan:\n";
+                cout << "\nMenu ditemukan:\n";
+                cout << "ID: " << hasilCari->id << "\n";
                 cout << "Nama: " << hasilCari->nama << "\n";
                 cout << "Kategori: " << hasilCari->kategori << "\n";
                 cout << "Harga: Rp" << hasilCari->harga << "\n";
             } else {
-                cout << "Menu dengan ID " << cariId << " tidak ditemukan.\n";
+                cout << "\nMenu dengan nama '" << keyword << "' tidak ditemukan.\n";
             }
             cout << "Tekan Enter untuk kembali...";
-            cin.ignore(); cin.get();
+            cin.get();
         }
         else if (pilihan == 3) {
             int pilCart;
@@ -530,7 +556,7 @@ void layarPemesan() {
 
                 if (pilCart == 1) {
                     printHeader("Tambah Menu ke Keranjang");
-                    cout << "| ID\t| Harga\t| Kategori\t| Nama Menu\n";
+                    cout << "| " << left << setw(4) << "ID" << " | " << left << setw(15) << "Nama Menu" << " | " << left << setw(15) << "Kategori" << " | Harga\n";
                     cout << "--------------------------------------------------------\n";
                     if (rootMenu == NULL) {
                         cout << "Katalog masih kosong.\n";
@@ -598,8 +624,8 @@ void layarResto() {
     while (true) {
         printHeader("DASHBOARD ADMIN RESTO");
         cout << "1. Tambah Menu Baru\n";
-        cout << "2. Monitor Antrean Dapur\n";
-        cout << "3. History Dapur & Laporan Pendapatan\n";
+        cout << "2. Monitor Antrean Pesanan\n";
+        cout << "3. Riwayat Pesanan & Laporan Pendapatan\n";
         cout << "0. Kembali ke Login\n";
         cout << "Pilih: ";
 
@@ -649,7 +675,7 @@ void layarResto() {
         else if (pilihan == 2) {
             int pilihAntrean;
             while (true) {
-                printHeader("MONITOR ANTREAN DAPUR");
+                printHeader("MONITOR ANTREAN PESANAN");
                 tampilAntreanDapur();
 
                 cout << "1. Selesaikan Pesanan Paling Depan\n";
@@ -669,7 +695,7 @@ void layarResto() {
             }
         }
         else if (pilihan == 3) {
-            printHeader("HISTORY DAPUR");
+            printHeader("RIWAYAT PESANAN");
             tampilHistoryDapur();
 
             cout << "\nTekan Enter untuk kembali...";
