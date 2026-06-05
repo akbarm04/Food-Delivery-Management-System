@@ -3,6 +3,8 @@
 #include <cstdlib> // buat clear screen
 #include <limits.h> // buat batas maksimal int
 #include <iomanip> // buat format tabel
+#include <fstream> // buat baca/tulis file (CSV)
+#include <sstream> // buat parse string CSV
 
 using namespace std;
 
@@ -55,6 +57,28 @@ Menu daftarMenu[10] = {
     {10, "Cheesecake", 25000, "Makanan"}
 };
 
+const string FILE_NAME = "katalog_menu.csv";
+
+void buatCSV() {
+    ofstream file(FILE_NAME);
+    if (file.is_open()) {
+        for (int i = 0; i < 10; i++) {
+            file << daftarMenu[i].id << ","
+                 << daftarMenu[i].nama << ","
+                 << daftarMenu[i].harga << ","
+                 << daftarMenu[i].kategori << "\n";
+        }
+        file.close();
+    }
+}
+
+void tambahMenuKeCSV(int id, string nama, int harga, string kategori) {
+    ofstream file(FILE_NAME, ios::app); 
+    if (file.is_open()) {
+        file << id << "," << nama << "," << harga << "," << kategori << "\n";
+        file.close();
+    }
+}
 
 AntreDapur antrean[100];
 AntreDapur pesananSelesai[100];
@@ -664,7 +688,8 @@ void layarResto() {
 
             if (konfirmasi == 'Y' || konfirmasi == 'y') {
                 rootMenu = insertMenu(rootMenu, id, nama, harga, kategori);
-                cout << "\n[SUKSES] Menu " << nama << " berhasil ditambahkan!\n";
+                tambahMenuKeCSV(id, nama, harga, kategori); 
+                cout << "\n[SUKSES] Menu " << nama << " berhasil ditambahkan dan disimpan permanen!\n";
             } else {
                 cout << "\n[INFO] Penambahan menu dibatalkan.\n";
             }
@@ -1025,10 +1050,34 @@ void layarKurir() {
     }
 }
 
-void MenuAwal() {
-    for (int i = 0; i < 10; i++) {
-        rootMenu = insertMenu(rootMenu, daftarMenu[i].id, daftarMenu[i].nama, daftarMenu[i].harga, daftarMenu[i].kategori);
+void loadMenuFromFile() {
+    ifstream file(FILE_NAME);
+    if (!file.is_open()) {
+        buatCSV();
+        file.open(FILE_NAME);
     }
+
+    string line;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string idStr, nama, hargaStr, kategori;
+
+        getline(ss, idStr, ',');
+        getline(ss, nama, ',');
+        getline(ss, hargaStr, ',');
+        getline(ss, kategori, ',');
+
+        if (!idStr.empty() && !hargaStr.empty()) {
+            int id = stoi(idStr);
+            int harga = stoi(hargaStr);
+            rootMenu = insertMenu(rootMenu, id, nama, harga, kategori);
+        }
+    }
+    file.close();
+}
+
+void MenuAwal() {
+    loadMenuFromFile();
 }
 
 int login(string roleName, string correctUser, string correctPass) {
